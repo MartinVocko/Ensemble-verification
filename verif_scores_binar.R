@@ -1,7 +1,6 @@
 #poladit do for cyklu, aby to projelo vsechnz cleny ensemblu automaticky
 
 
-
 score<-function (obs, pred, fudge = 0.01, silent = FALSE) 
 {
   if (is.null(pred) & length(obs) == 4) {

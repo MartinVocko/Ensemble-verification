@@ -708,6 +708,3 @@ ggplot(data=pre,aes(x=factor(AHEAD),y=value, group=variable))+
   theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
   ylab("")+xlab("HOURS")+ggtitle("SCORE")+
   scale_colour_brewer(name = 'MODEL', palette = 'Dark2')
-
-
-

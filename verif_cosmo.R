@@ -18,8 +18,8 @@ for (i in ahead)
   tab=cbind(RMSE, AHEAD= i)
   tab2=rbind(tab2,tab)
 }
-tab2=rename(tab2,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                   "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
+tab2=rename(tab2,c("V1"="X1","V2"="X2","V3"="X3","V4"="X4","V5"="X5","V6"="X6","V7"="X7","V8"="X8","V9"="X9","V10"="X10","V11"="X11","V12"="X12",
+                   "V13"="X13","V14"="X14","V15"="X15","V16"="X16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
 
 
 #### RMSE COSMO ####
@@ -36,30 +36,59 @@ for (i in ahead)
                   rmse(ens$`pf13`,ens$PR),rmse(ens$`pf14`,ens$PR),rmse(ens$`pf15`,ens$PR),rmse(ens$`pf16`,ens$PR),rmse(ens$`MEANcosmo`,ens$PR),rmse(ens$`MEDIANcosmo`,ens$PR))
       
   
-  tab=cbind(RMSE, AHEADcosmo= i)
+  tab=cbind(RMSE, AHEAD= i)
   tab3=rbind(tab3,tab)
 }
 
-tab3=rename(tab3,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                   "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEAN","V18"="MEDIAN"))
+tab3=rename(tab3,c("V1"="pf01","V2"="pf02","V3"="pf03","V4"="pf04","V5"="pf05","V6"="pf06","V7"="pf07","V8"="pf08","V9"="pf09","V10"="pf10","V11"="pf11","V12"="pf12",
+                   "V13"="pf13","V14"="pf14","V15"="pf15","V16"="pf16","V17"="MEANcosmo","V18"="MEDIANcosmo"))
 #rm=data.table(read.xls("rmse_lin.xls"))
 alme=melt(tab2,id.vars="AHEAD")
-ensr=alme[49:51,]
+cm=melt(tab3, id.vars="AHEAD")
 
-cm=melt(tab3, id.vars="AHEADcosmo")
-modr=cm[49:51,]
+rmse=rbind(alme,cm)
+rmse$variable=as.character(rmse$variable)
+rmse=setorder(rmse,variable,AHEAD)
+
 
 
 ####line colour 
+rmse$value=unlist(rmse$value)
+mod=rmse[1:18,]
+ensa=rmse[19:66,]
+ensc=rmse[67:114,]
 
-ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
-  geom_line()+
-  geom_line(data=modr,aes(x=AHEADcosmo,y=value,colour=variable))
-  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
-  ylab("RMSE")+xlab("HOURS")+ggtitle("RMSE")+
-  scale_colour_brewer(name = 'MODEL', palette = 'Set1')
 
+ggplot(data=ensa,aes(x=factor(AHEAD),y=value))+
+  geom_line(aes(x=factor(AHEAD),y=value ,group=variable),alpha=0.5)+
+  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 0.35), legend.justification = c(1, 1))+
+  ylab("RMSE")+xlab("HOURS")+ggtitle("ROOT MEAN SQUARE ERROR")+
+  scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+  geom_line(data=ensc,aes(group=factor(variable)),linetype="dotted",alpha=1)+
+  geom_line(data=mod,aes(group=variable, color=variable), size=1.5)
+
+### RMSE Regions ####
+modname=names (c(v[,9:28],v[,31:48])) 
+obl=unique(as.character(v$ID))
+tab=data.table()
+tab2=data.table()
+for (i in obl)
+{ 
+  ens=v[ID== i]
+    for (m in modname) { 
   
+  RMSE=data.table(rmse(ens[[m]],ens$PR))   #upgrade...projede sloupce s modelz automaticky
+ 
+  tab=cbind(RMSE, OBL= i, MODEL=m)
+  tab2=rbind(tab2,tab)
+  }
+} 
+
+ggplot(data=tab2, aes(x=OBL, y=V1)) + 
+  geom_boxplot(fill='white', color="black")+
+  stat_summary(fun.y=mean, geom="point", shape=18, size=4)+
+  ylab("RMSE")+xlab("MODEL")+ggtitle("RMSE")
+
   
   #### ME ALADIN ####
   en=v[,!c( "TIME","EVE", "tps", "tps_all","ORIGIN"),with=FALSE]
@@ -82,8 +111,8 @@ ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
       tab2=rbind(tab2, tab)
     }  
   
-  tab2=rename(tab2,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                     "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
+  tab2=rename(tab2,c("V1"="X1","V2"="X2","V3"="X3","V4"="X4","V5"="X5","V6"="X6","V7"="X7","V8"="X8","V9"="X9","V10"="X10","V11"="X11","V12"="X12",
+                     "V13"="X13","V14"="X14","V15"="X15","V16"="X16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
   
   
   #### ME COSMO ####
@@ -102,30 +131,40 @@ ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
                     me(ens$`pf07`,ens$PR),me(ens$`pf08`,ens$PR),me(ens$`pf09`,ens$PR),me(ens$`pf10`,ens$PR),me(ens$`pf11`,ens$PR),me(ens$`pf12`,ens$PR),
                     me(ens$`pf13`,ens$PR),me(ens$`pf14`,ens$PR),me(ens$`pf15`,ens$PR),me(ens$`pf16`,ens$PR),me(ens$`MEANcosmo`,ens$PR),me(ens$`MEDIANcosmo`,ens$PR))
     
-    tab=cbind(ME,AHEADcosmo= i)#obl=jj
+    tab=cbind(ME,AHEAD= i)#obl=jj
     tab3=rbind(tab3, tab)
   }  
   
-  tab3=rename(tab3,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                     "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEANcosmo","V18"="MEDIANcosmo"))
+  tab3=rename(tab3,c("V1"="pf01","V2"="pf02","V3"="pf03","V4"="pf04","V5"="pf05","V6"="pf06","V7"="pf07","V8"="pf08","V9"="pf09","V10"="pf10","V11"="pf11","V12"="pf12",
+                     "V13"="pf13","V14"="pf14","V15"="pf15","V16"="pf16","V17"="MEANcosmo","V18"="MEDIANcosmo"))
   
   
   
   alme=melt(tab2,id.vars="AHEAD")
-  ensr=alme[49:51,]
-  
-  cm=melt(tab3, id.vars="AHEADcosmo")
-  modr=cm[49:51,]
+  cm=melt(tab3, id.vars="AHEAD")
+ 
+   me=rbind(alme,cm)
+   me$variable=as.character(me$variable)
+   me=setorder(me,variable,AHEAD)
+    
   
   
   ####line colour 
+   me$value=unlist(me$value)
+   mod=me[1:18,]
+   ensa=me[19:66,]
+   ensc=me[67:114,]
+   
+   
+   ggplot(data=ensa,aes(x=factor(AHEAD),y=value))+
+     geom_line(aes(x=factor(AHEAD),y=value ,group=variable),alpha=0.5)+
+     theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 0.9), legend.justification = c(1, 1))+
+     ylab("ME")+xlab("HOURS")+ggtitle("MEAN ERROR")+
+     scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+     geom_line(data=ensc,aes(group=factor(variable)),linetype="dotted",alpha=1)+
+     geom_line(data=mod,aes(group=variable, color=variable), size=1.5)
   
-  ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
-    geom_line()+
-    geom_line(data=modr,aes(x=AHEADcosmo,y=value,colour=variable))+
-  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
-    ylab("ME")+xlab("HOURS")+ggtitle("ME")+
-    scale_colour_brewer(name = 'MODEL', palette = 'Set1')
+  
   
  
   ####  MAE ALADIN #### 
@@ -141,7 +180,7 @@ ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
   { 
     ens=en[AHEAD==i]
     MAE=data.table(mae(ens$`1`,ens$PR),mae(ens$`2`,ens$PR),mae(ens$`3`,ens$PR),mae(ens$`4`,ens$PR),mae(ens$`5`,ens$PR),
-                  me(ens$`6`,ens$PR),me(ens$`7`,ens$PR),mae(ens$`8`,ens$PR),mae(ens$`9`,ens$PR),mae(ens$`10`,ens$PR),
+                  mae(ens$`6`,ens$PR),mae(ens$`7`,ens$PR),mae(ens$`8`,ens$PR),mae(ens$`9`,ens$PR),mae(ens$`10`,ens$PR),
                   mae(ens$`11`,ens$PR),mae(ens$`12`,ens$PR),mae(ens$`13`,ens$PR),mae(ens$`14`,ens$PR),mae(ens$`15`,ens$PR),
                   mae(ens$`16`,ens$PR),mae(ens$`MEAN`,ens$PR),mae(ens$`MEDIAN`,ens$PR),mae(ens$`CF`,ens$PR),mae(ens$`ALADIN`,ens$PR))
     
@@ -149,8 +188,8 @@ ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
     tab2=rbind(tab2, tab)
   }  
   
-  tab2=rename(tab2,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                     "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
+  tab2=rename(tab2,c("V1"="X1","V2"="X2","V3"="X3","V4"="X4","V5"="X5","V6"="X6","V7"="X7","V8"="X8","V9"="X9","V10"="X10","V11"="X11","V12"="X12",
+                     "V13"="X13","V14"="X14","V15"="X15","V16"="X16","V17"="MEAN","V18"="MEDIAN","V19"="CF","V20"="ALADIN"))
   
   
   #### MAE COSMO ####
@@ -169,30 +208,38 @@ ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
                   mae(ens$`pf07`,ens$PR),mae(ens$`pf08`,ens$PR),mae(ens$`pf09`,ens$PR),mae(ens$`pf10`,ens$PR),mae(ens$`pf11`,ens$PR),mae(ens$`pf12`,ens$PR),
                   mae(ens$`pf13`,ens$PR),mae(ens$`pf14`,ens$PR),mae(ens$`pf15`,ens$PR),mae(ens$`pf16`,ens$PR),mae(ens$`MEANcosmo`,ens$PR),mae(ens$`MEDIANcosmo`,ens$PR))
     
-    tab=cbind(MAE,AHEADcosmo= i)#obl=jj
+    tab=cbind(MAE,AHEAD= i)#obl=jj
     tab3=rbind(tab3, tab)
   }  
   
-  tab3=rename(tab3,c("V1"="E1","V2"="E2","V3"="E3","V4"="E4","V5"="E5","V6"="E6","V7"="E7","V8"="E8","V9"="E9","V10"="E10","V11"="E11","V12"="E12",
-                     "V13"="E13","V14"="E14","V15"="E15","V16"="E16","V17"="MEANcosmo","V18"="MEDIANcosmo"))
+  tab3=rename(tab3,c("V1"="pf01","V2"="pf02","V3"="pf03","V4"="pf04","V5"="pf05","V6"="pf06","V7"="pf07","V8"="pf08","V9"="pf09","V10"="pf10","V11"="pf11","V12"="pf12",
+                     "V13"="pf13","V14"="pf14","V15"="pf15","V16"="pf16","V17"="MEANcosmo","V18"="MEDIANcosmo"))
   
   
   
   alme=melt(tab2,id.vars="AHEAD")
-  ensr=alme[49:51,]
+  cm=melt(tab3, id.vars="AHEAD")
   
-  cm=melt(tab3, id.vars="AHEADcosmo")
-  modr=cm[49:51,]
+  mae=rbind(alme,cm)
+  mae$variable=as.character(mae$variable)
+  mae=setorder(mae,variable,AHEAD)
+  
   
   
   ####line colour 
+  mae$value=unlist(mae$value)
+  mod=mae[1:18,]
+  ensa=mae[19:66,]
+  ensc=mae[67:114,]
   
-  ggplot(data=ensr, aes(x=AHEAD, y=value, colour=variable)) +
-    geom_line()+
-    geom_line(data=modr,aes(x=AHEADcosmo,y=value,colour=variable))+
-    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
-    ylab("MAE")+xlab("HOURS")+ggtitle("MAE")+
-    scale_colour_brewer(name = 'MODEL', palette = 'Set1')
+  
+  ggplot(data=ensa,aes(x=factor(AHEAD),y=value))+
+    geom_line(aes(x=factor(AHEAD),y=value ,group=variable),alpha=0.5)+
+    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 0.35), legend.justification = c(1, 1))+
+    ylab("MAE")+xlab("HOURS")+ggtitle("MEAN ABSOLUTE ERROR")+
+    scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+    geom_line(data=ensc,aes(group=factor(variable)),linetype="dotted",alpha=1)+
+    geom_line(data=mod,aes(group=variable, color=variable), size=1.5)
   
   
   
@@ -424,10 +471,11 @@ dt$V1=unlist(dt$V1)
   ensc=pod[67:114,]
   
   
-  ggplot(data=mod,aes(x=factor(AHEAD),y=POD, group=MODEL))+
-    geom_line(data=ensa,aes(x=factor(AHEAD),y=POD ,group=MODEL),alpha=0.5)+
-    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
+  ggplot(data=ensa,aes(x=factor(AHEAD),y=POD))+
+    geom_line(aes(x=factor(AHEAD),y=POD ,group=MODEL),alpha=0.5)+
+    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 0.35), legend.justification = c(1, 1))+
     ylab("POD")+xlab("HOURS")+ggtitle("POD")+
     scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
-    geom_line(data=ensc,aes(group=factor(MODEL)),size=1) 
+    geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
+    geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
   

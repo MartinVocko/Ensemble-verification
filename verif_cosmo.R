@@ -1,3 +1,4 @@
+### nastaveni cesty ####
 setwd("~/Plocha/DATA/cosmotabs")
 vc=readRDS('vertabcos18')
 v=na.omit(vc)

@@ -165,7 +165,30 @@ ggplot(data=tab2, aes(x=OBL, y=V1)) +
      geom_line(data=ensc,aes(group=factor(variable)),linetype="dotted",alpha=1)+
      geom_line(data=mod,aes(group=variable, color=variable), size=1.5)
   
-  
+
+   #### ME regions ####
+   
+   modname=names (c(v[,9:28],v[,31:48])) 
+   obl=unique(as.character(v$ID))
+   tab=data.table()
+   tab2=data.table()
+   for (i in obl)
+   { 
+     ens=v[ID== i]
+     for (m in modname) { 
+       
+       ME=data.table(me(ens[[m]],ens$PR))   #upgrade...projede sloupce s modelz automaticky
+       
+       tab=cbind(ME, OBL= i, MODEL=m)
+       tab2=rbind(tab2,tab)
+     }
+   } 
+   
+   ggplot(data=tab2, aes(x=OBL, y=V1)) + 
+     geom_boxplot(fill='white', color="black")+
+     stat_summary(fun.y=mean, geom="point", shape=18, size=4)+
+     ylab("ME")+xlab("MODEL")+ggtitle("ME")
+   
   
  
   ####  MAE ALADIN #### 
@@ -242,6 +265,28 @@ ggplot(data=tab2, aes(x=OBL, y=V1)) +
     geom_line(data=ensc,aes(group=factor(variable)),linetype="dotted",alpha=1)+
     geom_line(data=mod,aes(group=variable, color=variable), size=1.5)
   
+ #### MAE regions ####
+  
+  modname=names (c(v[,9:28],v[,31:48])) 
+  obl=unique(as.character(v$ID))
+  tab=data.table()
+  tab2=data.table()
+  for (i in obl)
+  { 
+    ens=v[ID== i]
+    for (m in modname) { 
+      
+      MAE=data.table(mae(ens[[m]],ens$PR))   #upgrade...projede sloupce s modelz automaticky
+      
+      tab=cbind(MAE, OBL= i, MODEL=m)
+      tab2=rbind(tab2,tab)
+    }
+  } 
+  
+  ggplot(data=tab2, aes(x=OBL, y=V1)) + 
+    geom_boxplot(fill='white', color="black")+
+    stat_summary(fun.y=mean, geom="point", shape=18, size=4)+
+    ylab("MAE")+xlab("MODEL")+ggtitle("MAE")
   
   
   ##### urceni tresholdu ######

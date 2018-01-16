@@ -132,7 +132,7 @@ score<-function (obs, pred, fudge = 0.01, silent = FALSE)
   
   
   
-  return(list( POD = POD))   #zde menit, jake skore chci returnout (ostatni skore jsou na konci skriptu)
+  return(list( FAR=FAR))   #zde menit, jake skore chci returnout (ostatni skore jsou na konci skriptu)
 }
 
 
@@ -141,7 +141,7 @@ score<-function (obs, pred, fudge = 0.01, silent = FALSE)
 
 ahead=c(6,12,18)
 obs=binar$PR
-#pred=binar$ALADIN
+
 #fudge = 0.01
 
 
@@ -154,7 +154,7 @@ for (i in ahead){
         modname= names (b[,8:27])    
         for (name in modname){
   
-                sc=data.table(POD=score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, AHEAD=i)
+                sc=data.table(FAR=score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, AHEAD=i)
                 dt=rbind(dt,sc)
   }
 }
@@ -168,7 +168,7 @@ for (i in ahead){
 
         modname2=names (bb[,30:47]) 
         for (nam in modname2){ 
-                   sc=data.table(POD=score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, AHEAD=i)
+                   sc=data.table(FAR=score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, AHEAD=i)
                    dtc=rbind(dtc,sc) 
         }
 }
@@ -177,7 +177,89 @@ for (i in ahead){
 tab=rbind(dt,dtc)
 tab=setorder(tab,MODEL,AHEAD)
 
-saveRDS(tab, file='POD_18')
+saveRDS(tab, file='FAR_18')
+
+
+
+
+#### Vypocet skore pomoci fce v zavislosti na thresholdu
+
+th=c(1,2.5,5,10)
+#fudge = 0.01
+
+
+#ALADIN a LAEF for cyklus TH
+dt=data.table()
+for (i in th){
+  b=binar[TH==i]
+  
+  
+  modname= names (b[,8:27])    
+  for (name in modname){
+    
+    sc=data.table(FAR=score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, TH=i)
+    dt=rbind(dt,sc)
+  }
+}
+
+
+#COSMO for cyklus TH
+
+dtc=data.table()
+for (i in th){ 
+  bb=binar[TH==i]
+  
+  modname2=names (bb[,30:47]) 
+  for (nam in modname2){ 
+    sc=data.table(FAR=score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, TH=i)
+    dtc=rbind(dtc,sc) 
+  }
+}
+
+
+tab=rbind(dt,dtc)
+tab=setorder(tab,MODEL,TH)
+
+saveRDS(tab, file='FAR_18TH')
+
+
+
+#### vykresleni vyse uvedenych hodnot zavislych na ahead a thresholdu
+
+# plot pro ahead s ensembly
+
+dt=data.table(readRDS("FAR_18"))
+dt$FAR=unlist(dt$FAR)
+mod=dt[1:18,]
+ensa=dt[19:66,]
+ensc=dt[67:114,]
+
+
+ggplot(data=ensa,aes(x=factor(AHEAD),y=FAR))+
+  geom_line(aes(x=factor(AHEAD),y=FAR ,group=MODEL),alpha=0.5)+
+  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 1), legend.justification = c(1, 1))+
+  ylab("FAR")+xlab("HOURS")+ggtitle("FAR")+
+  scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+  geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
+  geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
+
+#plot pro threshold s ensembly
+
+dtt=data.table(readRDS("FAR_18TH"))
+dtt$FAR=unlist(dtt$FAR)
+mod=dtt[1:24,]
+ensa=dtt[25:88,]
+ensc=dtt[89:152,]
+
+
+ggplot(data=ensa,aes(x=factor(TH),y=FAR))+
+  geom_line(aes(x=factor(TH),y=FAR ,group=MODEL),alpha=0.5)+
+  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 1), legend.justification = c(1, 1))+
+  ylab("FAR")+xlab("THRESHOLD [mm]")+ggtitle("FAR")+
+  scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+  geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
+  geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
+
 
 
 ########################################################################################################################

@@ -525,4 +525,22 @@ dt$V1=unlist(dt$V1)
     geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
     geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
   
+  #plot pro threshold POD i s ensembly
+  
+  pod=data.table(readRDS("POD_18TH"))
+  pod$POD=unlist(pod$POD)
+  mod=pod[1:24,]
+  ensa=pod[25:88,]
+  ensc=pod[89:152,]
+  
+  
+  ggplot(data=ensa,aes(x=factor(TH),y=POD))+
+    geom_line(aes(x=factor(TH),y=POD ,group=MODEL),alpha=0.5)+
+    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
+    ylab("POD")+xlab("THRESHOLD [mm]")+ggtitle("POD")+
+    scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
+    geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
+    geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
+  
+  
   

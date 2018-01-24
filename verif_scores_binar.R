@@ -1,6 +1,17 @@
 #poladit do for cyklu, aby to projelo vsechnz cleny ensemblu automaticky
+setwd("~/Plocha/DATA/cosmotabs")
+e1=readRDS("binarycos_1")
+e1=e1[,TH:=1]
+e2=readRDS("binarycos_2.5")
+e2=e2[,TH:=2.5]
+e3=readRDS("binarycos_5")
+e3=e3[,TH:=5]
+e4=readRDS("binarycos_10")
+e4=e4[,TH:=10]
+binar=rbind(e1,e2,e3,e4)
+###########
 
-
+###########
 score<-function (obs, pred, fudge = 0.01, silent = FALSE) 
 {
   if (is.null(pred) & length(obs) == 4) {
@@ -132,7 +143,7 @@ score<-function (obs, pred, fudge = 0.01, silent = FALSE)
   
   
   
-  return(list( FAR=FAR))   #zde menit, jake skore chci returnout (ostatni skore jsou na konci skriptu)
+  return(list( F=F))   #zde menit, jake skore chci returnout (ostatni skore jsou na konci skriptu)
 }
 
 
@@ -154,7 +165,7 @@ for (i in ahead){
         modname= names (b[,8:27])    
         for (name in modname){
   
-                sc=data.table(FAR=score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, AHEAD=i)
+                sc=data.table( F =score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, AHEAD=i)
                 dt=rbind(dt,sc)
   }
 }
@@ -168,7 +179,7 @@ for (i in ahead){
 
         modname2=names (bb[,30:47]) 
         for (nam in modname2){ 
-                   sc=data.table(FAR=score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, AHEAD=i)
+                   sc=data.table( F =score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, AHEAD=i)
                    dtc=rbind(dtc,sc) 
         }
 }
@@ -177,7 +188,7 @@ for (i in ahead){
 tab=rbind(dt,dtc)
 tab=setorder(tab,MODEL,AHEAD)
 
-saveRDS(tab, file='FAR_18')
+saveRDS(tab, file=' F _18')
 
 
 
@@ -197,7 +208,7 @@ for (i in th){
   modname= names (b[,8:27])    
   for (name in modname){
     
-    sc=data.table(FAR=score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, TH=i)
+    sc=data.table( F =score(b$PR, b[[name]],0.01, silent=FALSE),MODEL=name, TH=i)
     dt=rbind(dt,sc)
   }
 }
@@ -211,7 +222,7 @@ for (i in th){
   
   modname2=names (bb[,30:47]) 
   for (nam in modname2){ 
-    sc=data.table(FAR=score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, TH=i)
+    sc=data.table( F =score(bb$PR, bb[[nam]],0.01, silent=FALSE),MODEL=nam, TH=i)
     dtc=rbind(dtc,sc) 
   }
 }
@@ -220,7 +231,7 @@ for (i in th){
 tab=rbind(dt,dtc)
 tab=setorder(tab,MODEL,TH)
 
-saveRDS(tab, file='FAR_18TH')
+saveRDS(tab, file=' F _18TH')
 
 
 
@@ -228,34 +239,34 @@ saveRDS(tab, file='FAR_18TH')
 
 # plot pro ahead s ensembly
 
-dt=data.table(readRDS("FAR_18"))
-dt$FAR=unlist(dt$FAR)
+dt=data.table(readRDS(" F _18"))
+dt$ F =unlist(dt$ F )
 mod=dt[1:18,]
 ensa=dt[19:66,]
 ensc=dt[67:114,]
 
 
-ggplot(data=ensa,aes(x=factor(AHEAD),y=FAR))+
-  geom_line(aes(x=factor(AHEAD),y=FAR ,group=MODEL),alpha=0.5)+
+ggplot(data=ensa,aes(x=factor(AHEAD),y= F ))+
+  geom_line(aes(x=factor(AHEAD),y= F  ,group=MODEL),alpha=0.5)+
   theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 1), legend.justification = c(1, 1))+
-  ylab("FAR")+xlab("HOURS")+ggtitle("FAR")+
+  ylab(" F ")+xlab("HOURS")+ggtitle(" F ")+
   scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
   geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
   geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
 
 #plot pro threshold s ensembly
 
-dtt=data.table(readRDS("FAR_18TH"))
-dtt$FAR=unlist(dtt$FAR)
+dtt=data.table(readRDS(" F _18TH"))
+dtt$ F =unlist(dtt$ F )
 mod=dtt[1:24,]
 ensa=dtt[25:88,]
 ensc=dtt[89:152,]
 
 
-ggplot(data=ensa,aes(x=factor(TH),y=FAR))+
-  geom_line(aes(x=factor(TH),y=FAR ,group=MODEL),alpha=0.5)+
-  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.35, 1), legend.justification = c(1, 1))+
-  ylab("FAR")+xlab("THRESHOLD [mm]")+ggtitle("FAR")+
+ggplot(data=ensa,aes(x=factor(TH),y= F ))+
+  geom_line(aes(x=factor(TH),y= F  ,group=MODEL),alpha=0.5)+
+  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(0.9, 1), legend.justification = c(1, 1))+
+  ylab(" F ")+xlab("THRESHOLD [mm]")+ggtitle(" F ")+
   scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
   geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
   geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)

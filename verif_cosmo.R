@@ -463,7 +463,7 @@ for(j in ahead){
   obl=unique(as.character(binar$ID))
   ens=unique(as.character(names(binar[,8:27])))
   
-  #### POD ####  
+  #### POD - pro ostatni skore skript verif_scores_binar.r ####  
   
   # efektivneji vypocteno pres skript /verif_scores_binar.R/
   dat=data.table()
@@ -541,6 +541,67 @@ dt$V1=unlist(dt$V1)
     scale_colour_brewer(name = 'MODEL', palette = 'Set1')+
     geom_line(data=ensc,aes(group=factor(MODEL)),linetype="dotted",alpha=1)+
     geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
+  
+  #### Brier score ####
+  ahead=c(6,12,18)
+  tab=data.table()
+  tab2=data.table()
+  
+  for (i in ahead){
+    b=binar[AHEAD== i]
+  
+    
+    LAEF=as.matrix(b[,10:25])
+    ALADIN=as.matrix(b[,26])
+    MEANlaef=as.matrix(b[,8])
+    obs=as.matrix(b[,28])
+    
+    C=list()
+    C[[1]]=LAEF
+   # C[[2]]=ALADIN
+   # C[[3]]=MEANlaef
+    
+   # bs=lapply(ma,mean(EnsBrier(ma, obs, R.new=NA)))
+    
+   for (j in 1:length(C)){
+    ens=C[[j]]  
+      
+    bs=mean(EnsBrier(ens, obs ))    #R.new=NA
+    
+    tab=data.table(BS=bs,AHEAD= i, MODEL= 'LAEF')
+    tab2=rbind(tab2, tab)
+      
+    }
+  
+  }  
+  
+  for (i in ahead){ 
+    bb=binar[AHEADcosmo==i]
+ 
+  MEANcosmo=as.matrix(bb[,46])
+  COSMO=as.matrix(bb[,30:45])
+  obs=as.matrix(bb[,28])
+  
+  C=list()
+  C[[1]]=COSMO
+ # C[[2]]=MEANcosmo
+  
+     for (jj in 1:length(C)){ 
+       ens=C[[jj]]  
+       
+       bs=mean(EnsBrier(ens, obs, R.new=NA))
+       
+       tab=data.table(BS=bs,AHEAD= i, MODEL='COSMO')
+       tab2=rbind(tab2, tab)
+       
+     }
+  }
+ saveRDS(tab2,"BScosmolaef")     
+ 
+ ggplot(data=tab2,aes(x=factor(AHEAD),y=BS,group=MODEL,color=MODEL))+
+   geom_line()+
+   theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
+   ylab("BS")+xlab("HOURS")+ggtitle("BS")
   
   
   

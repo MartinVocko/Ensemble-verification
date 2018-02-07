@@ -543,6 +543,7 @@ dt$V1=unlist(dt$V1)
     geom_line(data=mod,aes(group=MODEL, color=MODEL), size=1.5)
   
   #### Brier score ####
+  ############################## AHEAD
   ahead=c(6,12,18)
   tab=data.table()
   tab2=data.table()
@@ -603,5 +604,214 @@ dt$V1=unlist(dt$V1)
    theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
    ylab("BS")+xlab("HOURS")+ggtitle("BS")
   
+####################################### TH
+ 
+ th=c(1,2.5,5,10)
+ tab=data.table()
+ tab2=data.table()
+ 
+ for (i in th){
+   b=binar[TH== i]
+   
+   
+   LAEF=as.matrix(b[,10:25])
+   ALADIN=as.matrix(b[,26])
+   MEANlaef=as.matrix(b[,8])
+   obs=as.matrix(b[,28])
+   
+   C=list()
+   C[[1]]=LAEF
+   # C[[2]]=ALADIN
+   # C[[3]]=MEANlaef
+   
+   # bs=lapply(ma,mean(EnsBrier(ma, obs, R.new=NA)))
+   
+   for (j in 1:length(C)){
+     ens=C[[j]]  
+     
+     bs=mean(EnsBrier(ens, obs ))    #R.new=NA
+     
+     tab=data.table(BS=bs,TH= i, MODEL= 'LAEF')
+     tab2=rbind(tab2, tab)
+     
+   }
+   
+ }  
+ 
+ for (i in th){ 
+   bb=binar[TH==i]
+   
+   MEANcosmo=as.matrix(bb[,46])
+   COSMO=as.matrix(bb[,30:45])
+   obs=as.matrix(bb[,28])
+   
+   C=list()
+   C[[1]]=COSMO
+   # C[[2]]=MEANcosmo
+   
+   for (jj in 1:length(C)){ 
+     ens=C[[jj]]  
+     
+     bs=mean(EnsBrier(ens, obs, R.new=NA))
+     
+     tab=data.table(BS=bs,TH= i, MODEL='COSMO')
+     tab2=rbind(tab2, tab)
+     
+   }
+ }
+ saveRDS(tab2,"BScosmolaef_th")     
+ 
+ ggplot(data=tab2,aes(x=factor(TH),y=BS,group=MODEL,color=MODEL))+
+   geom_line()+
+   theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
+   ylab("BS")+xlab("Threshold")+ggtitle("BS")
+ 
+ 
+ 
+
+############################ Ranked Probability Score  ##########
+ 
+ ############### AHEAD ALADIN LAEF
+ 
+ ahead=c(6,12,18)
+ obl=unique(as.character(v$ID))
+ tab=data.table()
+ tab2=data.table()
+# tab=list()
+# tab2=list()
+ #tab3=list()
+ 
+ #for (j in obl)
+ #{ 
+ # vo=v[ID==j]
+ 
+ for (i in ahead)
+ { 
+   va=v[AHEAD== i]
+   ens=va[,11:26]
+   ens[, id:=1:.N]
+   mens = melt(ens, id.vars = 'id')
+   mens[value<0, value := 0]
+   mens[, cls := cut(value, breaks = c(0, 1, 2.5, 5, 10, Inf), include.lowest = TRUE)]
+   res = mens[, .(prst = .N/16), by = .(id, cls)]
+   res = dcast.data.table(res, id ~ cls,value.var ="prst" )
+   res[is.na(res)] <- 0
+   res$id <- NULL
+   #res=matrix(res)
+   
+   # pro referencni predpoved
+   
+   ref=va$ALADIN
+   ref=data.table(ref)
+   ref[, id:=1:.N]
+   mref=melt(ref, id.vars='id')
+   mref[value<0, value:=0]
+   mref[,cls:= cut(value, breaks = c (0,1,2.5,5,10,Inf), include.lowest=TRUE)]
+   pref=mref[,.(prst= .N/1), by = .(id,cls)]
+   pref=dcast.data.table(pref, id~cls)
+   pref[is.na(pref)] <- 0
+   pref$id=NULL
+   
+   #pro merena data
+ 
+   
+   obs=va$PR
+   obs=data.table(obs)
+   obs[, id:=1:.N]
+   mobs=melt(obs, id.vars='id')
+   mobs[value<0, value:=0]
+   mobs[,cls:= cut (value, breaks = c(0,1,2.5,5,10,Inf),include.lowest= TRUE)]
+   pobs=mobs[, .(prst = .N/1), by = .(id, cls)] 
+   pobs = dcast.data.table(pobs, id ~ cls)
+   pobs[is.na(pobs)] <- 0
+   pobs$id <- NULL
+   
+   RPS <- mean( apply( ( res - pobs)^2,1, sum)  )/ ( ncol(res) -1 )
+  # RPS.climo <- mean( apply( ( pref - pobs)^2,1, sum)  )/ ( ncol(pref) -1 )
+  # RPSS <- 1 - RPS/RPS.climo
+   
+   tab=cbind(RPS=RPS, AHEAD=i, MODEL= "LAEF")   #obl=j
+   
+   tab2=rbind(tab2,tab)
+   #tab2=cbind(tab,AHEAD=ahead)
+   #tab2=rbind(tab2,RPS.climo)
+ }
+ 
+ }
+
+
+tab=data.table()
+#tab2=data.table()
+# tab=list()
+# tab2=list()
+#tab3=list()
+
+#for (j in obl)
+#{ 
+# vo=v[ID==j]
+
+for (i in ahead)
+{ 
+  va=v[AHEADcosmo== i]
+  ens=va[,31:46]
+  ens[, id:=1:.N]
+  mens = melt(ens, id.vars = 'id')
+  mens[value<0, value := 0]
+  mens[, cls := cut(value, breaks = c(0, 1, 2.5, 5, 10, Inf), include.lowest = TRUE)]
+  res = mens[, .(prst = .N/16), by = .(id, cls)]
+  res = dcast.data.table(res, id ~ cls,value.var ="prst" )
+  res[is.na(res)] <- 0
+  res$id <- NULL
+  #res=matrix(res)
+  
+  # pro referencni predpoved
+  
+  ref=va$ALADIN
+  ref=data.table(ref)
+  ref[, id:=1:.N]
+  mref=melt(ref, id.vars='id')
+  mref[value<0, value:=0]
+  mref[,cls:= cut(value, breaks = c (0,1,2.5,5,10,Inf), include.lowest=TRUE)]
+  pref=mref[,.(prst= .N/1), by = .(id,cls)]
+  pref=dcast.data.table(pref, id~cls)
+  pref[is.na(pref)] <- 0
+  pref$id=NULL
+  
+  #pro merena data
   
   
+  obs=va$PR
+  obs=data.table(obs)
+  obs[, id:=1:.N]
+  mobs=melt(obs, id.vars='id')
+  mobs[value<0, value:=0]
+  mobs[,cls:= cut (value, breaks = c(0,1,2.5,5,10,Inf),include.lowest= TRUE)]
+  pobs=mobs[, .(prst = .N/1), by = .(id, cls)] 
+  pobs = dcast.data.table(pobs, id ~ cls)
+  pobs[is.na(pobs)] <- 0
+  pobs$id <- NULL
+  
+  RPS <- mean( apply( ( res - pobs)^2,1, sum)  )/ ( ncol(res) -1 )
+  # RPS.climo <- mean( apply( ( pref - pobs)^2,1, sum)  )/ ( ncol(pref) -1 )
+  # RPSS <- 1 - RPS/RPS.climo
+  
+  tab=cbind(RPS=RPS, AHEAD=i, MODEL= "COSMO")   #obl=j
+  
+  tab2=rbind(tab2,tab)
+  #tab2=cbind(tab,AHEAD=ahead)
+  #tab2=rbind(tab2,RPS.climo)
+}
+
+}
+
+
+tab2$AHEAD=as.numeric(tab2$AHEAD)  #prevedeni cisel v DT z characters na numerics (nevim proc se to tak uklada)
+tab2$RPS=as.numeric(tab2$RPS)
+tab2[,lapply(.SD, round, 3),by=MODEL] #zaokrouhleni hodnot na tri destinna mista
+
+saveRDS(tab2,"RPScosmolaef")     
+
+ggplot(data=tab2,aes(x=factor(AHEAD),y=RPS,group=MODEL,color=MODEL))+
+  geom_line()+
+  theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
+  ylab("RPS")+xlab("HOURS")+ggtitle("RPS")

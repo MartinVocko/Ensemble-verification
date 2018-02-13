@@ -78,7 +78,7 @@ for (i in obl)
   ens=v[ID== i]
     for (m in modname) { 
   
-  RMSE=data.table(rmse(ens[[m]],ens$PR))   #upgrade...projede sloupce s modelz automaticky
+  RMSE=data.table(rmse(ens[[m]],ens$PR))   #upgrade...projede sloupce s modely automaticky
  
   tab=cbind(RMSE, OBL= i, MODEL=m)
   tab2=rbind(tab2,tab)
@@ -815,3 +815,191 @@ ggplot(data=tab2,aes(x=factor(AHEAD),y=RPS,group=MODEL,color=MODEL))+
   geom_line()+
   theme(legend.key.width = unit(2.5, 'cm'), legend.position = c(1, 1), legend.justification = c(1, 1))+
   ylab("RPS")+xlab("HOURS")+ggtitle("RPS")
+
+###### Rank histogram #####
+
+v1=v[PR<1]
+v2=v[PR<2.5]
+v5=v[PR<5]
+v10=v[PR<10]
+vi=v[PR>10]
+
+### Rank LAEF
+observations=v1$PR
+forecasts=v1[,11:26,with=F]
+rank1 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+
+observations=v2$PR
+forecasts=v2[,11:26,with=F] 
+rank2 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+observations=v5$PR
+forecasts=v5[,11:26,with=F] 
+rank5 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+observations=v10$PR
+forecasts=v10[,11:26,with=F] 
+rank10 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                    ties = "random")[1])
+observations=vi$PR
+forecasts=vi[,11:26,with=F] 
+ranki <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+l=list(rank1, rank2, rank5, rank10, ranki)
+
+multhist(l,freq=F,breaks = seq(0,17,by=1),names.arg=rep("",17), prob = TRUE, xaxt = "n",col=c( "#252525", "#636363", "#969696", "#CCCCCC", "#F7F7F7"),main="Rank Histogram-LAEF")
+axis(1, at = seq(3.2, to = 104 + 0.5, by = 6), labels = 1:(16 + 1))
+abline(h = 1/(k + 1), lty = 2)
+legend("topleft", c("  < 1 mm"," < 2 mm","  < 5 mm","  < 10 mm","  > 10 mm"), fill=c( "#252525", "#636363", "#969696", "#CCCCCC", "#F7F7F7") )
+
+
+#### Rank COSMO
+
+observations=v1$PR
+forecasts=v1[,31:46,with=F]
+rank1 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+
+observations=v2$PR
+forecasts=v2[,31:46,with=F] 
+rank2 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+observations=v5$PR
+forecasts=v5[,31:46,with=F] 
+rank5 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+observations=v10$PR
+forecasts=v10[,31:46,with=F] 
+rank10 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                    ties = "random")[1])
+observations=vi$PR
+forecasts=vi[,31:46,with=F] 
+ranki <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+l=list(rank1, rank2, rank5, rank10, ranki)
+
+multhist(l,freq=F,breaks = seq(0,17,by=1),names.arg=rep("",17), prob = TRUE, xaxt = "n",col=c( "#252525", "#636363", "#969696", "#CCCCCC", "#F7F7F7"),main="Rank Histogram-COSMO")
+axis(1, at = seq(3.2, to = 104 + 0.5, by = 6), labels = 1:(16 + 1))
+abline(h = 1/(k + 1), lty = 2)
+legend("topleft", c("  < 1 mm"," < 2 mm","  < 5 mm","  < 10 mm","  > 10 mm"), fill=c( "#252525", "#636363", "#969696", "#CCCCCC", "#F7F7F7") )
+
+### rank histogram pro COSMO x LAEF bez zavislosti na velikosti uhrnu
+
+observations=v$PR
+forecasts=v[,11:26,with=F]
+rank1 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+
+observations=v$PR
+forecasts=v[,31:46,with=F]
+rank2 <- apply(cbind(observations, forecasts), 1, function(x) rank(x, 
+                                                                   ties = "random")[1])
+
+l=list(rank1, rank2)
+
+multhist(l,freq=F,breaks = seq(0,17,by=1),names.arg=rep("",17), prob = TRUE, xaxt = "n",col=c( "#252525", "#F7F7F7"),main="Rank Histogram-COSMO vs. LAEF")
+axis(1,at= seq(1.5, to = 49 + 0.5, by = 3),labels = 1:(16 + 1))
+abline(h = 1/(k + 1), lty = 2)
+legend("topleft", c("LAEF","COSMO"), fill=c( "#252525", "#F7F7F7") )
+
+
+
+#### RANK POLYGONS COSMO/LAEF ####
+
+### definice vertab kategorii dle uhrnu
+vc=v
+vc$CAT<-findInterval(vc$PR, c(0, 1, 2.5, 5, 10), rightmost.closed = TRUE)
+
+### Vypocet score do tabulky
+
+# CORR
+#dta=vc[CAT %in% c("5")]
+obl=unique(as.character(v$ID))
+tab=data.table()
+tab1=data.table()
+tab2=data.table()
+tab3=data.table()
+tab4=data.table()
+
+for (ii in obl)
+{ 
+  dt=dta[ID==ii]
+  CORR=data.table(CORRa=cor(dt$MEAN,dt$PR),CORRc=cor(dt$MEANcosmo,dt$PR))
+  tab=rbind(tab,CORR)
+  
+  MAE=data.table(MAEa=mae(dt$`MEAN`,dt$PR),MAEc=mae(dt$`MEANcosmo`,dt$PR))
+  tab1=rbind(tab1,MAE)
+  
+  RMSE=data.table(RMSEa=rmse(dt$`MEAN`,dt$PR),RMSEc=rmse(dt$`MEANcosmo`,dt$PR)) 
+  tab2=rbind(tab2,RMSE) 
+  
+  b=bin[ID==ii]
+  ct=data.table( PODa = table.stats(b$PR,b$MEAN))
+  ct=ct[4,]
+  ctm=data.table( PODc = table.stats(b$PR,b$MEANcosmo))
+  ctm=ctm[4,]
+  dt=cbind(unlist(ct),unlist(ctm))
+  tab3=rbind(tab3,dt)
+  
+  t=data.table( TSa = table.stats(b$PR,b$MEAN))
+  t=t[2,]
+  tm=data.table( TSc = table.stats(b$PR,b$MEANcosmo))
+  tm=tm[2,]
+  dtm=cbind(unlist(t),unlist(tm))
+  tab4=rbind(tab4,dtm)
+ 
+  
+}
+
+tab3=rename(tab3,c("V1"="PODa","V2"="PODc"))
+tab4=rename(tab4,c("V1"="TSa","V2"="TSc"))
+datulka=cbind (tab, tab1, tab2, tab3, tab4)
+
+
+## Rankovani
+
+r=datulka
+nam1=names(c(r[,1:2],r[,7:10]))
+nam0=names(r[,3:6])
+
+for (i in nam1)
+{ 
+  x=r[[i]]
+  rx=(rank(-x))
+  r=cbind(r,rx)
+  r=rename(r,c("rx"=i))
+
+}
+
+
+for (i in nam0)
+{ 
+  x=r[[i]]
+  rx=rank(x)
+  r=cbind(r,rx)
+  r=rename(r,c("rx"=i))
+}
+
+
+output <- data.frame( RANKmean = apply(r[,c(11,13,15,17,19)], 1, sum) ,RANKmeancosmo = apply(r[,c(12,14,16,18,20)], 1, sum) ) #soucet ranku
+r=cbind(r,output)
+r$obl=r1$obl
+saveRDS(r,fil="ranktab")
+
+
+r$COSMO<-cut(r$RANKmeancosmo,breaks=c(0,44,76,108,140,Inf), labels=c(1,2,3,4,5),right=FALSE)
+r$LAEF<-cut(r$RANKmean,breaks=c(0,44,76,108,140,Inf), labels=c(1,2,3,4,5),right=FALSE)
+rnk=r[,c(23,24,25)]
+rn = data.table(merge(obl, rnk, by.x = "id", by.y = "obl") )
+RN =melt(rn, id.vars = c(1:7))#, ncol()))
+RN$TH2 <- factor(RN$TH,levels=c("1","2.5","5","10","MEAN"))
+
+ggplot(RN) + geom_polygon(aes(x= long, y = lat, fill = value, group = group)) + 
+  facet_grid(~variable) + 
+  geom_polygon(aes(x = long, y = lat, group = group), data = fvp, col = 'black', fill = NA) + 
+  scale_fill_brewer("RANK",palette='Reds')+
+  theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),
+        strip.background = element_rect( colour='black',fill="grey"), panel.border = element_rect(colour = "black"),strip.text.x = element_text(size = 12), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), strip.text.y = element_text(size=12))
+

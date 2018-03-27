@@ -909,53 +909,62 @@ legend("topleft", c("LAEF","COSMO"), fill=c( "#252525", "#F7F7F7") )
 
 ### definice vertab kategorii dle uhrnu
 vc=v
-vc$CAT<-findInterval(vc$PR, c(0, 1, 2.5, 5, 10), rightmost.closed = TRUE)
-
+#vc$CAT<-findInterval(vc$PR, c(0, 1, 2.5, 5, 10), rightmost.closed = TRUE)
+dta=v
+bin=binar
 ### Vypocet score do tabulky
 
 # CORR
 #dta=vc[CAT %in% c("5")]
 obl=unique(as.character(v$ID))
+ahead=c(6,12,18)
+modname=names (c(v[,31:48])) #v[,9:28]
+tab0=data.table()
 tab=data.table()
 tab1=data.table()
 tab2=data.table()
 tab3=data.table()
 tab4=data.table()
 
-for (ii in obl)
+for (i in ahead)
 { 
-  dt=dta[ID==ii]
-  CORR=data.table(CORRa=cor(dt$MEAN,dt$PR),CORRc=cor(dt$MEANcosmo,dt$PR))
-  tab=rbind(tab,CORR)
+  dt=dta[AHEADcosmo==i]
+  b=binar[AHEADcosmo==i]
   
-  MAE=data.table(MAEa=mae(dt$`MEAN`,dt$PR),MAEc=mae(dt$`MEANcosmo`,dt$PR))
-  tab1=rbind(tab1,MAE)
+  for (m in modname) { 
+    
+    ME=data.table(me(dt[[m]],dt$PR))
+    tab=cbind(ME,SCORE="ME", AHEAD= i, MODEL=m)
+    tab0=rbind(tab0,tab)
+    
+    MAE=data.table(mae(dt[[m]],dt$PR))
+    tab=cbind(MAE,SCORE="MAE", AHEAD= i, MODEL=m)
+    tab1=rbind(tab1,tab)
   
-  RMSE=data.table(RMSEa=rmse(dt$`MEAN`,dt$PR),RMSEc=rmse(dt$`MEANcosmo`,dt$PR)) 
-  tab2=rbind(tab2,RMSE) 
   
-  b=bin[ID==ii]
-  ct=data.table( PODa = table.stats(b$PR,b$MEAN))
-  ct=ct[4,]
-  ctm=data.table( PODc = table.stats(b$PR,b$MEANcosmo))
-  ctm=ctm[4,]
-  dt=cbind(unlist(ct),unlist(ctm))
-  tab3=rbind(tab3,dt)
+    RMSE=data.table(rmse(dt[[m]],dt$PR))   
+    tab=cbind(RMSE,SCORE="RMSE", AHEAD= i, MODEL=m)
+    tab2=rbind(tab2,tab)
+   
+    
+    ct=data.table( POD = table.stats(b$PR,b[[m]]))
+    ct=ct[4,]
+    dct=cbind(POD=unlist(ct),SCORE="POD",AHEAD=i,MODEL=m)
+    tab3=rbind(tab3,dct)
   
-  t=data.table( TSa = table.stats(b$PR,b$MEAN))
-  t=t[2,]
-  tm=data.table( TSc = table.stats(b$PR,b$MEANcosmo))
-  tm=tm[2,]
-  dtm=cbind(unlist(t),unlist(tm))
-  tab4=rbind(tab4,dtm)
+    t=data.table( TS = table.stats(b$PR,b[[m]]))
+    t=t[2,]
+    dtm=cbind(TS=unlist(t),SCORE="TS",AHEAD=i,Model=m)
+    tab4=rbind(tab4,dtm)
  
+  } 
   
+
 }
 
-tab3=rename(tab3,c("V1"="PODa","V2"="PODc"))
-tab4=rename(tab4,c("V1"="TSa","V2"="TSc"))
-datulka=cbind (tab, tab1, tab2, tab3, tab4)
 
+datulka=rbind (tab0, tab1, tab2, tab3, tab4)
+x=melt(datulka,id.vars="MODEL")###################### 5emeltovat tabulky, modely v radku jako ve v tabulce
 
 ## Rankovani
 
@@ -1002,4 +1011,6 @@ ggplot(RN) + geom_polygon(aes(x= long, y = lat, fill = value, group = group)) +
   theme(axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),
         strip.background = element_rect( colour='black',fill="grey"), panel.border = element_rect(colour = "black"),strip.text.x = element_text(size = 12), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), strip.text.y = element_text(size=12))
+
+
 

@@ -780,7 +780,7 @@ write.xls(rainmean,'TPSrain.xls')
 
 ### definice vertab kategorii dle uhrnu
 vc=v
-vc$CAT<-findInterval(vc$PR, c(0, 1, 2.5, 5, 10), rightmost.closed = TRUE)
+c$CAT<-findInterval(vc$PR, c(0, 1, 2.5, 5, 10), rightmost.closed = TRUE)
 
 ### Vypocet score do tabulky
 

@@ -928,70 +928,85 @@ tab4=data.table()
 
 for (i in ahead)
 { 
-  dt=dta[AHEADcosmo==i]
-  b=binar[AHEADcosmo==i]
+dt=dta         #   dt=dta[AHEADcosmo==i]
+b=binar         #   b=binar[AHEADcosmo==i]
   
   for (m in modname) { 
     
     ME=data.table(me(dt[[m]],dt$PR))
-    tab=cbind(ME,SCORE="ME", AHEAD= i, MODEL=m)
+    tab=cbind(ME,SCORE="ME", MODEL=m) #AHEAD= i
     tab0=rbind(tab0,tab)
     
     MAE=data.table(mae(dt[[m]],dt$PR))
-    tab=cbind(MAE,SCORE="MAE", AHEAD= i, MODEL=m)
+    tab=cbind(MAE,SCORE="MAE", MODEL=m) #AHEAD= i
     tab1=rbind(tab1,tab)
   
   
     RMSE=data.table(rmse(dt[[m]],dt$PR))   
-    tab=cbind(RMSE,SCORE="RMSE", AHEAD= i, MODEL=m)
+    tab=cbind(RMSE,SCORE="RMSE", MODEL=m)  #AHEAD= i
     tab2=rbind(tab2,tab)
    
     
     ct=data.table( POD = table.stats(b$PR,b[[m]]))
     ct=ct[4,]
-    dct=cbind(POD=unlist(ct),SCORE="POD",AHEAD=i,MODEL=m)
+    dct=cbind(V1=unlist(ct),SCORE="POD",MODEL=m)   #,AHEAD=i
     tab3=rbind(tab3,dct)
   
     t=data.table( TS = table.stats(b$PR,b[[m]]))
     t=t[2,]
-    dtm=cbind(TS=unlist(t),SCORE="TS",AHEAD=i,Model=m)
+    dtm=cbind(V1=unlist(t),SCORE="TS",MODEL=m)   #,AHEAD=i
     tab4=rbind(tab4,dtm)
  
   } 
   
 
 }
+x=gather
 
+datulka1=rbind (tab0, tab1, tab2)
+datulka2=rbind (tab3, tab4)
+datulka1=dcast(datulka1,MODEL ~SCORE, value.var='V1')
+datulka2=dcast(datulka2, MODEL~ SCORE, value.var='V1')
 
-datulka=rbind (tab0, tab1, tab2, tab3, tab4)
-x=melt(datulka,id.vars="MODEL")###################### 5emeltovat tabulky, modely v radku jako ve v tabulce
 
 ## Rankovani
 
-r=datulka
-nam1=names(c(r[,1:2],r[,7:10]))
-nam0=names(r[,3:6])
+r1=datulka1
+nam=names(r1[c(2:ncol(r1))])
 
-for (i in nam1)
+for (i in nam)
 { 
-  x=r[[i]]
-  rx=(rank(-x))
-  r=cbind(r,rx)
-  r=rename(r,c("rx"=i))
+  x=r1[[i]]
+  rx=(rank(x))
+  r1=cbind(r1,rx)
+  r1=rename(r1,c("rx"=i))
 
 }
 
+r2=datulka2
+nam2=names(r2[c(2:ncol(r2))])
 
-for (i in nam0)
+for (i in nam2)
 { 
-  x=r[[i]]
-  rx=rank(x)
-  r=cbind(r,rx)
-  r=rename(r,c("rx"=i))
+  x=r2[[i]]
+  rx=rank(desc(x))
+  r2=cbind(r2,rx)
+  r2=rename(r2,c("rx"=i))
 }
 
+r=cbind(r1,r2)
+output <- data.frame( RANKsum = apply(r[,c(5,6,7,11,12)], 1, sum)) 
 
-output <- data.frame( RANKmean = apply(r[,c(11,13,15,17,19)], 1, sum) ,RANKmeancosmo = apply(r[,c(12,14,16,18,20)], 1, sum) ) #soucet ranku
+r=cbind(r,output)
+r=r[-c(2,3,4,8,9,10)]
+RANKall=rank(r$RANKsum)
+r=cbind(r,RANKall)
+
+saveRDS(r,'rank_cosmo')
+
+###############################
+
+output <- data.frame( RANKmean = apply(r[,c(5,6,7,11,12)], 1, sum) ,RANKmeancosmo = apply(r[,c(12,14,16,18,20)], 1, sum) ) #soucet ranku
 r=cbind(r,output)
 r$obl=r1$obl
 saveRDS(r,fil="ranktab")

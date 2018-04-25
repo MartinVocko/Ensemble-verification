@@ -926,7 +926,7 @@ tab2=data.table()
 tab3=data.table()
 tab4=data.table()
 
-for (i in ahead)
+#for (i in ahead)
 { 
 dt=dta         #   dt=dta[AHEADcosmo==i]
 b=binar         #   b=binar[AHEADcosmo==i]
@@ -1003,7 +1003,14 @@ RANKall=rank(r$RANKsum)
 r=cbind(r,RANKall)
 
 saveRDS(r,'rank_cosmo')
+write.csv(r,'rank_cosmo')
 
+rr=r[order(RANKall),]
+x=data.table(MODEL=rr$MODEL,RANKsum=rr$RANKsum)
+
+ggplot(data=x, aes(x=reorder(MODEL, RANKsum), y=RANKsum))+
+geom_bar(stat="identity", fill="turquoise4")+
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ###############################
 
 output <- data.frame( RANKmean = apply(r[,c(5,6,7,11,12)], 1, sum) ,RANKmeancosmo = apply(r[,c(12,14,16,18,20)], 1, sum) ) #soucet ranku
